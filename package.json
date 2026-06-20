@@ -1,0 +1,27 @@
+{
+  "name": "nb-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Remote MCP server exposing Google's nano banana (Gemini 2.5 Flash Image) for image generation and editing in Claude Design, claude.ai and Claude Desktop.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@google/genai": "^2.9.0",
+    "@modelcontextprotocol/sdk": "1.26.0",
+    "mcp-handler": "^1.1.0",
+    "next": "^15",
+    "react": "^19",
+    "react-dom": "^19",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}
