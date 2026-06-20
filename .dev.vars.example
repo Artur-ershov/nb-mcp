@@ -1,0 +1,7 @@
+# Optional — only needed for the "nano-banana" (Google Gemini) backend.
+# The default "workers-ai" backend is free and needs NO key.
+#
+# Copy this file to .dev.vars for local `wrangler dev`, or set it in production with:
+#   wrangler secret put GEMINI_API_KEY
+#
+# GEMINI_API_KEY="your-google-gemini-api-key"

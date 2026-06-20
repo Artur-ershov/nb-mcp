@@ -1,0 +1,15 @@
+name = "nb-mcp"
+main = "src/index.ts"
+compatibility_date = "2025-11-01"
+
+# Free Workers AI binding — powers the default image backend (no API key needed).
+[ai]
+binding = "AI"
+
+[observability]
+enabled = true
+
+# Optional: pin a default backend. The built-in default is already "workers-ai".
+# [vars]
+# NB_BACKEND = "workers-ai"
+# NB_WORKERS_MODEL = "@cf/black-forest-labs/flux-1-schnell"

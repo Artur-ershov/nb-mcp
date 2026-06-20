@@ -1,124 +1,97 @@
-# 🍌 nb-mcp — Nano Banana MCP
+# 🍌 nb-mcp — image generation MCP for Claude
 
-A **remote MCP server** that gives Claude the ability to generate and edit images
-with Google's **nano banana** (Gemini 2.5 Flash Image) model.
+A **remote MCP server** running on **Cloudflare Workers** that lets Claude generate images.
+Add it once as a **custom connector** and use it in **Claude Design**, **claude.ai**, and
+**Claude Desktop**.
 
-Deploy it once, add it as a **custom connector**, and then use nano banana directly
-inside **Claude Design**, **claude.ai**, **Claude Desktop**, and any other MCP client.
+- **Free by default** — uses **Cloudflare Workers AI** (Flux), no API key, no billing. Perfect for testing.
+- **Optional nano banana** — switch to Google **Gemini 2.5 Flash Image** when you want (needs a key + billing).
 
-- `generate_image` — turn a text prompt into an image
-- `edit_image` — edit, restyle, or combine existing images with a natural-language instruction
-
-The server speaks the modern **Streamable HTTP** MCP transport and is built to deploy on
-**Vercel** in a couple of minutes. Your Gemini API key lives on the server and is never
-exposed to Claude.
+One tool: `generate_image` (text → image), returned inline so Claude can see it.
 
 ---
 
-## Why a remote MCP server (and not a local one)?
+## Why Cloudflare Workers?
 
-Claude Design and claude.ai connect to **custom connectors from Anthropic's cloud**, not from
-your computer — so the server has to be reachable on the public internet over HTTP. That's
-exactly what this project is: a small hosted HTTP MCP server.
-
-> If you only ever use **Claude Desktop**, a local (stdio) server also works — but the hosted
-> URL below works there too, so one deployment covers every surface.
+Claude's custom connectors are reached **from Anthropic's cloud over the public internet**, so the
+server must be hosted. Cloudflare Workers is a great fit: generous free tier, one-command deploy, and
+**Workers AI gives free image models via the `env.AI` binding** — so the default path needs no API key
+and no billing at all.
 
 ---
 
-## 1. Get a Gemini API key
-
-nano banana is part of the Google Gemini API. Grab a free key at
-**https://aistudio.google.com/apikey**. You'll set it as the `GEMINI_API_KEY` environment
-variable on your deployment.
-
----
-
-## 2. Deploy to Vercel
-
-### Option A — Vercel CLI
+## Deploy (≈2 minutes)
 
 ```bash
-npm i -g vercel        # if you don't have it
-vercel                 # link/create the project and deploy a preview
-vercel env add GEMINI_API_KEY    # paste your key (Production + Preview)
-vercel --prod          # deploy to production
+npm install
+npx wrangler login          # opens a browser; or set CLOUDFLARE_API_TOKEN
+npm run deploy
 ```
 
-### Option B — Git + Vercel dashboard
-
-1. Push this repo to GitHub/GitLab/Bitbucket.
-2. In Vercel, **Add New… → Project** and import the repo.
-3. Under **Settings → Environment Variables**, add `GEMINI_API_KEY`.
-4. Deploy.
-
-After deploying, your MCP endpoint is:
+Wrangler prints your URL. The MCP endpoint is:
 
 ```
-https://<your-project>.vercel.app/mcp
+https://nb-mcp.<your-subdomain>.workers.dev/mcp
 ```
 
-Open the root URL (`https://<your-project>.vercel.app/`) in a browser to confirm it's live.
+Open the root URL in a browser to confirm it's live. That's it — the default **Workers AI** backend
+works immediately on the free tier (no key needed).
 
-> **maxDuration:** image generation can take 10–30s. The route is configured for up to 60s,
-> which is the limit on Vercel's Hobby plan. On Pro you can raise it.
+> **Free tier:** Workers AI includes a daily free allocation, enough for plenty of test images.
+> Deploying the Worker itself is also free.
 
 ---
 
-## 3. Add it to Claude as a custom connector
+## Add it to Claude
 
-1. In Claude, go to **Settings → Connectors** (also shown as **Customize → Connectors**).
+1. In Claude, go to **Settings → Connectors** (a.k.a. **Customize → Connectors**).
 2. Click **+ Add custom connector**.
-3. **Name:** `nano banana` (anything you like).
-   **URL:** `https://<your-project>.vercel.app/mcp`
-4. Save. No OAuth is required (leave Advanced settings empty).
-5. In a chat, open the **+** menu → **Connectors** and enable it for the conversation.
+3. **Name:** `nano banana` (anything). **URL:** your `…/mcp` URL.
+4. Save (no OAuth needed — leave Advanced settings empty).
+5. In a chat, open the **+** menu → **Connectors** and enable it, then ask Claude to make an image.
 
-Now ask Claude things like:
-
-- “Generate a 16:9 hero image of a neon-lit cyberpunk street market, cinematic lighting.”
-- “Make me a minimalist logo: a banana wearing sunglasses, flat vector, on white.”
-- “Take this image https://example.com/room.jpg and restyle it as a cozy Scandinavian interior.”
-- “Combine https://…/logo.png and https://…/tshirt.jpg into a product mockup.”
-
-> Custom remote connectors are available on Claude (web), Cowork, and Claude Desktop across
-> Free/Pro/Max/Team/Enterprise. On Team/Enterprise, an Owner adds the connector for the org
-> first. Availability inside **Claude Design's** UI follows the same connector system; if you
-> don't see custom connectors there yet, add it in **claude.ai** with the same account.
+Try:
+- “Generate an image of a neon cyberpunk street market, cinematic lighting.”
+- “Make a flat-vector logo of a banana wearing sunglasses on white.”
 
 ---
 
-## Tools
+## Tool: `generate_image`
 
-### `generate_image`
 | param | type | required | description |
 |-------|------|----------|-------------|
 | `prompt` | string | ✅ | What to draw. Be specific about subject, style, composition, colours, lighting, mood. |
-| `aspect_ratio` | enum | – | `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`, `2:3`, `21:9` |
+| `backend` | `workers-ai` \| `nano-banana` | – | Model to use. Default `workers-ai` (free Flux). `nano-banana` = Google Gemini (needs key). |
+| `steps` | integer 1–8 | – | Workers AI (Flux) diffusion steps. Higher = better/slower. Default 4. |
 
-### `edit_image`
-| param | type | required | description |
-|-------|------|----------|-------------|
-| `prompt` | string | ✅ | How to edit / combine the source image(s). |
-| `image_urls` | string[] (1–4) | ✅ | Publicly reachable image URL(s). Pass several to blend them. |
-| `aspect_ratio` | enum | – | Optional output aspect ratio. |
+---
 
-Both tools return the resulting image **inline** so Claude can see and use it.
+## Optional: enable nano banana (Gemini)
+
+The repo keeps the original "nano banana" path as an option for when you want Google's model.
+
+```bash
+wrangler secret put GEMINI_API_KEY      # paste your Google Gemini key
+```
+
+Then either call the tool with `backend: "nano-banana"`, or make it the default by setting
+`NB_BACKEND = "nano-banana"` under `[vars]` in `wrangler.toml` and redeploying.
+
+> ⚠️ **Gemini image generation requires billing.** On Google's free tier the image model has a quota
+> of **0** (you'll get HTTP 429). Enable billing on the project of your API key first. The default
+> **Workers AI** backend has no such requirement.
 
 ---
 
 ## Configuration
 
-| env var | required | default | description |
-|---------|----------|---------|-------------|
-| `GEMINI_API_KEY` | ✅ | – | Your Google Gemini API key. |
-| `NB_MODEL` | – | `gemini-2.5-flash-image` | Override the model. |
-
-Model options:
-
-- `gemini-2.5-flash-image` — the classic **nano banana** (fast, great default)
-- `gemini-3-pro-image` — **Nano Banana Pro** (higher quality, slower, pricier)
-- `gemini-3.1-flash-image` — **Nano Banana 2**
+| binding / var | where | purpose |
+|---------------|-------|---------|
+| `AI` | `wrangler.toml` `[ai]` | Workers AI binding (free image backend). Required for `workers-ai`. |
+| `GEMINI_API_KEY` | `wrangler secret put` / `.dev.vars` | Only for the `nano-banana` backend. |
+| `NB_BACKEND` | `[vars]` | Default backend: `workers-ai` (default) or `nano-banana`. |
+| `NB_WORKERS_MODEL` | `[vars]` | Override Workers AI model (default `@cf/black-forest-labs/flux-1-schnell`). |
+| `NB_GEMINI_MODEL` | `[vars]` | Override Gemini model (default `gemini-2.5-flash-image`). |
 
 ---
 
@@ -126,27 +99,25 @@ Model options:
 
 ```bash
 npm install
-cp .env.example .env.local      # then put your GEMINI_API_KEY in .env.local
-npm run dev                     # http://localhost:3000  (endpoint: /mcp)
+npx wrangler login            # the AI binding always runs remotely, so dev needs auth too
+npm run dev                   # http://localhost:8787  (endpoint: /mcp)
 
-# in another terminal — verify the MCP protocol end-to-end:
-node scripts/smoke-test.mjs
+# in another terminal, verify the MCP protocol:
+node scripts/smoke-test.mjs                                   # local
+node scripts/smoke-test.mjs https://<worker>.workers.dev/mcp  # remote
 ```
 
-`scripts/smoke-test.mjs` connects as an MCP client and lists the tools — handy for confirming a
-deployment too: `node scripts/smoke-test.mjs https://<your-project>.vercel.app/mcp`.
+For the `nano-banana` backend locally, copy `.dev.vars.example` → `.dev.vars` and add your key.
 
 ---
 
 ## Security notes
 
-- Your `GEMINI_API_KEY` stays server-side; Claude never receives it.
-- This server is **unauthenticated** by default — anyone who knows the URL can call it and spend
-  your Gemini quota. For personal use, keep the URL private. To lock it down, add OAuth via
-  `mcp-handler`'s `withMcpAuth` helper (Claude's connector UI supports OAuth client id/secret),
-  or put the deployment behind Vercel Authentication / a WAF rule.
-- Images are returned inline as base64. Very large (e.g. 2K) outputs can bump into serverless
-  response-size limits; the default model/resolution stays well within them.
+- The default **Workers AI** backend needs no secret. A `GEMINI_API_KEY` (if used) is stored as a
+  Cloudflare secret and never sent to Claude.
+- The connector is **unauthenticated** by default — anyone with the URL can call it and use your
+  Workers AI / Gemini quota. Keep the URL private, or add auth (Cloudflare Access in front of the
+  Worker, or OAuth in the MCP layer).
 
 ---
 
@@ -154,25 +125,16 @@ deployment too: `node scripts/smoke-test.mjs https://<your-project>.vercel.app/m
 
 ```
 Claude (Design / web / desktop)
-        │  Streamable HTTP (MCP)
+        │  Streamable HTTP (MCP)  POST /mcp
         ▼
-/app/[transport]/route.ts   ← mcp-handler (Streamable HTTP transport)
+Cloudflare Worker  (src/index.ts)   ← stateless, hand-rolled MCP transport
+        │
+        ├─ backend "workers-ai" → env.AI.run(Flux)          ← free, no key
+        └─ backend "nano-banana" → Gemini REST API          ← needs GEMINI_API_KEY + billing
         │
         ▼
-/lib/nanobanana.ts          ← @google/genai → Gemini "nano banana"
-        │
-        ▼
-   generated image (returned inline to Claude)
+   image returned inline to Claude
 ```
 
-- **Transport:** Streamable HTTP (the current MCP standard; the route exports `GET`/`POST`/`DELETE`).
-- **Stateless:** no Redis/session store required — fine for request/response image tools.
-- **Runtime:** Node.js serverless function (`@google/genai` needs Node, not Edge).
-
----
-
-## Tech
-
-[`next`](https://nextjs.org) · [`mcp-handler`](https://www.npmjs.com/package/mcp-handler) ·
-[`@modelcontextprotocol/sdk`](https://www.npmjs.com/package/@modelcontextprotocol/sdk) ·
-[`@google/genai`](https://www.npmjs.com/package/@google/genai) · `zod`
+- **Transport:** stateless Streamable HTTP (`POST /mcp`, SSE response). No Durable Objects, no Redis.
+- **Runtime deps:** none. Just Wrangler + TypeScript for tooling.

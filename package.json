@@ -2,26 +2,18 @@
   "name": "nb-mcp",
   "version": "0.1.0",
   "private": true,
-  "description": "Remote MCP server exposing Google's nano banana (Gemini 2.5 Flash Image) for image generation and editing in Claude Design, claude.ai and Claude Desktop.",
+  "type": "module",
+  "description": "Remote MCP server (Cloudflare Worker) for image generation in Claude Design / claude.ai. Free by default via Cloudflare Workers AI (Flux), with optional Google nano banana (Gemini 2.5 Flash Image).",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@google/genai": "^2.9.0",
-    "@modelcontextprotocol/sdk": "1.26.0",
-    "mcp-handler": "^1.1.0",
-    "next": "^15",
-    "react": "^19",
-    "react-dom": "^19",
-    "zod": "^3.25.0"
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "cf-typegen": "wrangler types"
   },
   "devDependencies": {
-    "@types/node": "^22",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "typescript": "^5"
+    "@cloudflare/workers-types": "^4.20240909.0",
+    "typescript": "^5",
+    "wrangler": "^4.103.0"
   }
 }

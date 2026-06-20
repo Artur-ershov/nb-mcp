@@ -1,24 +1,17 @@
 # dependencies
 node_modules/
 
-# next.js
-.next/
-out/
-next-env.d.ts
-
-# production
-build/
-dist/
+# wrangler / cloudflare
+.wrangler/
+.dev.vars
+.dev.vars.local
 
 # environment / secrets
 .env
-.env.local
 .env*.local
-
-# vercel
-.vercel
 
 # misc
 *.log
 .DS_Store
+dist/
 *.tsbuildinfo
